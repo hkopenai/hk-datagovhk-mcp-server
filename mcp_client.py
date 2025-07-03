@@ -19,6 +19,46 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Force DEBUG level for this script
 logger.debug("Logging initialized with DEBUG level")
 
+async def wait_for_server_initialization(server_process, timeout=20):
+    """
+    Wait for the MCP server to initialize by checking stdout and stderr for readiness indicators.
+    
+    Args:
+        server_process: The subprocess object of the running server.
+        timeout (int): Maximum time to wait for initialization in seconds.
+    
+    Returns:
+        bool: True if server is ready, False if timeout is reached.
+    """
+    logger.debug("Waiting for server to initialize...")
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if server_process.stderr:
+            stderr_line = server_process.stderr.readline().strip()
+            if stderr_line:
+                logger.debug(f"Server stderr: {stderr_line}")
+                if "stdio" in stderr_line.lower():
+                    logger.info("Server initialization detected as ready via stderr (stdio mode detected).")
+                    return True
+        time.sleep(0.5)
+    
+    logger.warning("Server did not indicate readiness within the extended timeout of 20 seconds. Proceeding to connect anyway, but connection may fail.")
+    
+    # Check stderr for any errors during initialization
+    stderr_output = ""
+    if server_process.stderr:
+        while True:
+            line = server_process.stderr.readline().strip()
+            if line:
+                stderr_output += line + "\n"
+                logger.debug(f"Server stderr: {line}")
+            else:
+                break
+    if stderr_output:
+        logger.warning(f"Server stderr during initialization: {stderr_output[:500]}...")
+
+    return False
+
 async def call_mcp_tool(server_url, tool_name, params, use_stdio=False, server_module=None):
     """
     Call an MCP tool with the given parameters and return the response.
@@ -27,7 +67,7 @@ async def call_mcp_tool(server_url, tool_name, params, use_stdio=False, server_m
         server_url (str): The URL of the MCP server (used if not using stdio).
         tool_name (str): The name of the tool to call.
         params (dict): The parameters to pass to the tool.
-        use_stdio (bool): If True, start the server as a subprocess and connect via HTTP.
+        use_stdio (bool): If True, start the server as a subprocess and connect via stdio.
         server_module (str): The module name to run as the MCP server (used with stdio mode).
     
     Returns:
@@ -38,9 +78,10 @@ async def call_mcp_tool(server_url, tool_name, params, use_stdio=False, server_m
             raise ValueError("Server module must be provided when using stdio mode")
         logger.info(f"Starting MCP server as a subprocess with module: {server_module}")
         
-        # Start the server as a subprocess
+        # Start the server as a subprocess with stdio communication
         server_process = subprocess.Popen(
             [sys.executable, "-m", server_module],
+            stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -48,50 +89,14 @@ async def call_mcp_tool(server_url, tool_name, params, use_stdio=False, server_m
         )
         logger.debug("MCP server subprocess started. Waiting for it to initialize...")
         
-        # Wait for the server to start (look for a log message indicating it's ready)
-        initialization_timeout = 20  # seconds
-        start_time = time.time()
-        server_ready = False
-        while time.time() - start_time < initialization_timeout:
-            if server_process.stderr:
-                stderr_line = server_process.stderr.readline().strip()
-                if stderr_line:
-                    logger.debug(f"Server stderr: {stderr_line}")
-                    if "stdio" in stderr_line.lower():
-                        logger.info("Server initialization detected as ready via stderr (stdio mode detected).")
-                        server_ready = True
-                        break            
-            # if server_process.stdout:
-            #     stdout_line = server_process.stdout.readline().strip()
-            #     if stdout_line:
-            #         logger.debug(f"Server stdout: {stdout_line}")
-            #         if "HK Data.gov.hk MCP Server running" in stdout_line:
-            #             logger.info("Server initialization detected as ready via stdout.")
-            #             server_ready = True
-            #             break
-            time.sleep(0.5)
+        # Wait for server initialization
+        await wait_for_server_initialization(server_process)
         
-        if not server_ready:
-            logger.warning("Server did not indicate readiness within the extended timeout of 20 seconds. Proceeding to connect anyway, but connection may fail.")
-        
-        # Check stderr for any errors during initialization
-        stderr_output = ""
-        if server_process.stderr:
-            while True:
-                line = server_process.stderr.readline().strip()
-                if line:
-                    stderr_output += line + "\n"
-                    logger.debug(f"Server stderr: {line}")
-                else:
-                    break
-        if stderr_output:
-            logger.warning(f"Server stderr during initialization: {stderr_output[:500]}...")
-        
-        # Connect to the server via HTTP (assuming default port 8000)
-        local_server_url = "http://127.0.0.1:8000/mcp/"
-        logger.info(f"Connecting to local MCP server at {local_server_url}")
+        # Use stdio_client for communication instead of HTTP
+        logger.info("Connecting to local MCP server via stdio")
         try:
-            async with streamablehttp_client(local_server_url) as (read_stream, write_stream, _):
+            from mcp.client.stdio import stdio_client
+            async with stdio_client(server_process.stdin, server_process.stdout) as (read_stream, write_stream):
                 async with ClientSession(read_stream, write_stream) as session:
                     await session.initialize()
                     logger.debug(f"Calling tool '{tool_name}' with parameters: {json.dumps(params, ensure_ascii=False)}")
