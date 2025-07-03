@@ -59,85 +59,41 @@ async def wait_for_server_initialization(server_process, timeout=20):
 
     return False
 
-async def call_mcp_tool(server_url, tool_name, params, use_stdio=False, server_module=None):
+async def call_mcp_tool_stdio(tool_name, params, server_module):
     """
-    Call an MCP tool with the given parameters and return the response.
+    Call an MCP tool using stdio mode by starting a server subprocess and connecting via stdio.
     
     Args:
-        server_url (str): The URL of the MCP server (used if not using stdio).
         tool_name (str): The name of the tool to call.
         params (dict): The parameters to pass to the tool.
-        use_stdio (bool): If True, start the server as a subprocess and connect via stdio.
-        server_module (str): The module name to run as the MCP server (used with stdio mode).
+        server_module (str): The module name to run as the MCP server.
     
     Returns:
         dict: The response from the tool call.
     """
-    if use_stdio:
-        if not server_module:
-            raise ValueError("Server module must be provided when using stdio mode")
-        logger.info(f"Starting MCP server as a subprocess with module: {server_module}")
-        
-        # Start the server as a subprocess with stdio communication
-        server_process = subprocess.Popen(
-            [sys.executable, "-m", server_module],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1
-        )
-        logger.debug("MCP server subprocess started. Waiting for it to initialize...")
-        
-        # Wait for server initialization
-        await wait_for_server_initialization(server_process)
-        
-        # Use stdio_client for communication instead of HTTP
-        logger.info("Connecting to local MCP server via stdio")
-        try:
-            from mcp.client.stdio import stdio_client
-            async with stdio_client(server_process.stdin, server_process.stdout) as (read_stream, write_stream):
-                async with ClientSession(read_stream, write_stream) as session:
-                    await session.initialize()
-                    logger.debug(f"Calling tool '{tool_name}' with parameters: {json.dumps(params, ensure_ascii=False)}")
-                    response = await session.call_tool(tool_name, params)
-                    logger.debug(f"Full response received from '{tool_name}': {response}")
-                    logger.info(f"Response summary from '{tool_name}': {str(response)[:500]}...")
-                    
-                    json_text = "{}"
-                    if response.content:
-                        for content in response.content:
-                            try:
-                                # type: ignore - Pylance warning suppression for attribute access
-                                if hasattr(content, 'text') and content.text:
-                                    json_text = content.text
-                                    logger.debug(f"Extracted text content from response: {json_text[:500]}...")
-                                    break
-                            except AttributeError:
-                                logger.debug(f"Content item lacks 'text' attribute: {content}")
-                                continue
-                    try:
-                        data = json.loads(json_text)
-                        logger.debug(f"Parsed JSON data from response: {json.dumps(data, ensure_ascii=False)[:500]}...")
-                    except json.JSONDecodeError:
-                        logger.error(f"Invalid JSON response: {json_text}")
-                        raise ValueError(f"Invalid JSON response received from tool")
-                    if "error" in data:
-                        logger.error(f"Error in response: {data['error']}")
-                        raise ValueError(f"Tool call failed: {data['error']}")
-                    logger.info(f"Tool call successful, returning data")
-                    return data
-        finally:
-            # Terminate the server process
-            server_process.terminate()
-            try:
-                server_process.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                server_process.kill()
-            logger.info("Local MCP server subprocess terminated.")
-    else:
-        logger.info(f"Connecting to MCP server at {server_url}")
-        async with streamablehttp_client(server_url) as (read_stream, write_stream, _):
+    if not server_module:
+        raise ValueError("Server module must be provided when using stdio mode")
+    logger.info(f"Starting MCP server as a subprocess with module: {server_module}")
+    
+    # Start the server as a subprocess with stdio communication
+    server_process = subprocess.Popen(
+        [sys.executable, "-m", server_module],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1
+    )
+    logger.debug("MCP server subprocess started. Waiting for it to initialize...")
+    
+    # Wait for server initialization
+    await wait_for_server_initialization(server_process)
+    
+    # Use stdio_client for communication instead of HTTP
+    logger.info("Connecting to local MCP server via stdio")
+    try:
+        from mcp.client.stdio import stdio_client
+        async with stdio_client(server_process.stdin, server_process.stdout) as (read_stream, write_stream):
             async with ClientSession(read_stream, write_stream) as session:
                 await session.initialize()
                 logger.debug(f"Calling tool '{tool_name}' with parameters: {json.dumps(params, ensure_ascii=False)}")
@@ -168,6 +124,78 @@ async def call_mcp_tool(server_url, tool_name, params, use_stdio=False, server_m
                     raise ValueError(f"Tool call failed: {data['error']}")
                 logger.info(f"Tool call successful, returning data")
                 return data
+    finally:
+        # Terminate the server process
+        server_process.terminate()
+        try:
+            server_process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            server_process.kill()
+        logger.info("Local MCP server subprocess terminated.")
+
+async def call_mcp_tool_http(server_url, tool_name, params):
+    """
+    Call an MCP tool using HTTP SSE mode by connecting to a running server.
+    
+    Args:
+        server_url (str): The URL of the MCP server.
+        tool_name (str): The name of the tool to call.
+        params (dict): The parameters to pass to the tool.
+    
+    Returns:
+        dict: The response from the tool call.
+    """
+    logger.info(f"Connecting to MCP server at {server_url}")
+    async with streamablehttp_client(server_url) as (read_stream, write_stream, _):
+        async with ClientSession(read_stream, write_stream) as session:
+            await session.initialize()
+            logger.debug(f"Calling tool '{tool_name}' with parameters: {json.dumps(params, ensure_ascii=False)}")
+            response = await session.call_tool(tool_name, params)
+            logger.debug(f"Full response received from '{tool_name}': {response}")
+            logger.info(f"Response summary from '{tool_name}': {str(response)[:500]}...")
+            
+            json_text = "{}"
+            if response.content:
+                for content in response.content:
+                    try:
+                        # type: ignore - Pylance warning suppression for attribute access
+                        if hasattr(content, 'text') and content.text:
+                            json_text = content.text
+                            logger.debug(f"Extracted text content from response: {json_text[:500]}...")
+                            break
+                    except AttributeError:
+                        logger.debug(f"Content item lacks 'text' attribute: {content}")
+                        continue
+            try:
+                data = json.loads(json_text)
+                logger.debug(f"Parsed JSON data from response: {json.dumps(data, ensure_ascii=False)[:500]}...")
+            except json.JSONDecodeError:
+                logger.error(f"Invalid JSON response: {json_text}")
+                raise ValueError(f"Invalid JSON response received from tool")
+            if "error" in data:
+                logger.error(f"Error in response: {data['error']}")
+                raise ValueError(f"Tool call failed: {data['error']}")
+            logger.info(f"Tool call successful, returning data")
+            return data
+
+async def call_mcp_tool(server_url, tool_name, params, use_stdio=False, server_module=None):
+    """
+    Call an MCP tool with the given parameters and return the response.
+    
+    Args:
+        server_url (str): The URL of the MCP server (used if not using stdio).
+        tool_name (str): The name of the tool to call.
+        params (dict): The parameters to pass to the tool.
+        use_stdio (bool): If True, start the server as a subprocess and connect via stdio.
+        server_module (str): The module name to run as the MCP server (used with stdio mode).
+    
+    Returns:
+        dict: The response from the tool call.
+    """
+    if use_stdio:
+        return await call_mcp_tool_stdio(tool_name, params, server_module)
+    else:
+        return await call_mcp_tool_http(server_url, tool_name, params)
 
 def main():
     parser = argparse.ArgumentParser(description="MCP Client to call tools on an MCP server.")
