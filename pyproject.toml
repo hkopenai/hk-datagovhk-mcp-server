@@ -3,9 +3,9 @@ requires = [ "setuptools>=42", "wheel",]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hkopenai.hk_climate_mcp_server"
-version = "0.4.1"
-description = "Hong Kong Weather MCP Server providing climate and weather data tools"
+name = "hkopenai.hk_datagovhk_mcp_server"
+version = "0.1.0"
+description = "Hong Kong DataGovHK MCP Server providing data crawling and processing tools"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -19,11 +19,13 @@ email = "neo@01man.com"
 repository = "https://github.com/hkopenai/hk-datagovhk-mcp-server.git"
 
 [project.scripts]
-hk_datagovhk_mcp_server = "hkopenai.hk_datagovhk_mcp_server.app:main"
+hk_datagovhk_mcp_server = "hkopenai.hk_datagovhk_mcp_server.__main__:main"
+mcp_client = "mcp_client:main"
 
 [tool.setuptools]
 packages = [ "hkopenai.hk_datagovhk_mcp_server",]
 include-package-data = true
+py-modules = ["mcp_client"]
 
 [tool.bandit]
 exclude_dirs = [ "venv", ".venv", "tests",]
