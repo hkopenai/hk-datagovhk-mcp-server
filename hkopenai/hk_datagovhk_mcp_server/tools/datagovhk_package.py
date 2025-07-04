@@ -2,8 +2,8 @@ import requests
 from typing import Dict, Any
 import logging
 
-# Configure logging with default level DEBUG
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configure logging
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def get_package_data(id: str, language: str = "en") -> Dict[str, Any]:

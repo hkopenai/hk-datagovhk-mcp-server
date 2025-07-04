@@ -3,8 +3,7 @@ from bs4 import BeautifulSoup
 from typing import Dict, Any
 import logging
 
-# Configure logging with default level DEBUG
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configure logging
 logger = logging.getLogger(__name__)
 
 def crawl_datasets(category: str, page: int = 1) -> Dict[str, Any]:
