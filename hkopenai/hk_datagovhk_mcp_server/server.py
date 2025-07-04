@@ -2,7 +2,7 @@ import argparse
 from fastmcp import FastMCP
 from typing import Dict, Annotated, Optional
 from pydantic import Field
-from hkopenai.hk_datagovhk_mcp_server.tools import datagovhk_crawler
+from hkopenai.hk_datagovhk_mcp_server.tools import datagovhk_crawler, datagovhk_providers, datagovhk_categories
 
 def create_mcp_server():
     """Create and configure the HK Data.gov.hk MCP server"""
@@ -13,6 +13,18 @@ def create_mcp_server():
     )
     def crawl_datasets(category: str, page: int = 1) -> Dict:
         return datagovhk_crawler.crawl_datasets(category, page)
+
+    @mcp.tool(
+        description="Fetch providers from data.gov.hk based on the specified language (en, tc, sc).",
+    )
+    def get_providers(language: str = "en") -> Dict:
+        return datagovhk_providers.get_providers(language)
+
+    @mcp.tool(
+        description="Fetch categories from data.gov.hk based on the specified language (en, tc, sc).",
+    )
+    def get_categories(language: str = "en") -> Dict:
+        return datagovhk_categories.get_categories(language)
     
     return mcp
 

@@ -125,5 +125,6 @@ class TestDatagovhkCrawler(unittest.TestCase):
         self.assertIn("error", result)
         self.assertIn("An unexpected error occurred", result["error"])
 
+
 if __name__ == "__main__":
     unittest.main()
