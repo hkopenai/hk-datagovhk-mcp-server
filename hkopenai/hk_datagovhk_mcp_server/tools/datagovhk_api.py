@@ -6,18 +6,22 @@ import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def get_package_data(id: str) -> Dict[str, Any]:
+def get_package_data(id: str, language: str = "en") -> Dict[str, Any]:
     """
-    Fetch package data from data.gov.hk API using the provided ID.
+    Fetch package data from data.gov.hk API using the provided ID and language.
 
     Args:
         id: The ID of the package to fetch data for.
+        language: The language code (en, tc, sc) to fetch the data in. Defaults to "en".
 
     Returns:
         Dict containing the package data.
     """
-    logger.debug(f"Fetching package data for ID: {id}")
-    url = f"https://data.gov.hk/en-data/api/3/action/package_show?id={id}"
+    logger.debug(f"Fetching package data for ID: {id} in language: {language}")
+    if language not in ["en", "tc", "sc"]:
+        logger.error(f"Invalid language code: {language}. Defaulting to 'en'.")
+        language = "en"
+    url = f"https://data.gov.hk/{language}-data/api/3/action/package_show?id={id}"
     logger.debug(f"Using URL: {url}")
     
     try:

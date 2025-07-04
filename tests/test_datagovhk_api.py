@@ -128,7 +128,41 @@ class TestDataGovHKApi(unittest.TestCase):
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
 
-        result = get_package_data(id="hk-hyd-plis-lamppostdata")
+        result = get_package_data(id="hk-hyd-plis-lamppostdata", language="en")
+        self.assertEqual(result, self.sample_data)
+        mock_get.assert_called_once_with(
+            "https://data.gov.hk/en-data/api/3/action/package_show?id=hk-hyd-plis-lamppostdata",
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
+            }
+        )
+
+    @patch('requests.get')
+    def test_get_package_data_different_language(self, mock_get):
+        mock_response = Mock()
+        mock_response.json.return_value = self.sample_data
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        result = get_package_data(id="hk-hyd-plis-lamppostdata", language="tc")
+        self.assertEqual(result, self.sample_data)
+        mock_get.assert_called_once_with(
+            "https://data.gov.hk/tc-data/api/3/action/package_show?id=hk-hyd-plis-lamppostdata",
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
+            }
+        )
+
+    @patch('requests.get')
+    def test_get_package_data_invalid_language(self, mock_get):
+        mock_response = Mock()
+        mock_response.json.return_value = self.sample_data
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        result = get_package_data(id="hk-hyd-plis-lamppostdata", language="invalid")
         self.assertEqual(result, self.sample_data)
         mock_get.assert_called_once_with(
             "https://data.gov.hk/en-data/api/3/action/package_show?id=hk-hyd-plis-lamppostdata",
@@ -142,7 +176,7 @@ class TestDataGovHKApi(unittest.TestCase):
     def test_get_package_data_request_exception(self, mock_get):
         mock_get.side_effect = Exception("Request failed")
 
-        result = get_package_data(id="hk-hyd-plis-lamppostdata")
+        result = get_package_data(id="hk-hyd-plis-lamppostdata", language="en")
         self.assertIn("error", result)
         self.assertIn("Request failed", result["error"])
 

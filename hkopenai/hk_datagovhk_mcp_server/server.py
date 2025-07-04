@@ -27,10 +27,10 @@ def create_mcp_server():
         return datagovhk_categories.get_categories(language)
 
     @mcp.tool(
-        description="Fetch package data from data.gov.hk API using the provided ID, typically obtained from the crawler tool.",
+        description="Fetch package data from data.gov.hk API using the provided ID and language, typically obtained from the crawler tool.",
     )
-    def get_package_data(id: str) -> Dict:
-        return datagovhk_api.get_package_data(id)
+    def get_package_data(id: str, language: str = "en") -> Dict:
+        return datagovhk_api.get_package_data(id, language)
     
     return mcp
 
