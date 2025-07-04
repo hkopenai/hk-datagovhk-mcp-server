@@ -2,7 +2,7 @@ import argparse
 from fastmcp import FastMCP
 from typing import Dict, Annotated, Optional
 from pydantic import Field
-from hkopenai.hk_datagovhk_mcp_server.tools import datagovhk_crawler, datagovhk_providers, datagovhk_categories, datagovhk_api
+from hkopenai.hk_datagovhk_mcp_server.tools import datagovhk_crawler, datagovhk_providers, datagovhk_categories, datagovhk_package
 
 def create_mcp_server():
     """Create and configure the HK Data.gov.hk MCP server"""
@@ -30,7 +30,7 @@ def create_mcp_server():
         description="Fetch package data from data.gov.hk API using the provided ID and language, typically obtained from the crawler tool.",
     )
     def get_package_data(id: str, language: str = "en") -> Dict:
-        return datagovhk_api.get_package_data(id, language)
+        return datagovhk_package.get_package_data(id, language)
     
     return mcp
 

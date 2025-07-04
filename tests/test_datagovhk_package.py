@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, Mock
 from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_package import get_package_data
 
-class TestDataGovHKPackage(unittest.TestCase):
+class TestDataGovHKApi(unittest.TestCase):
     def setUp(self):
         self.sample_data = {
             "help": "https://data.gov.hk/en-data/api/3/action/help_show?name=package_show",
