@@ -3,7 +3,13 @@ from unittest.mock import patch, MagicMock
 import requests
 from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_providers import get_providers
 
+"""
+Unit tests for the datagovhk_providers module.
+This module tests the functionality of fetching provider data from data.gov.hk.
+"""
+
 class TestDatagovhkProviders(unittest.TestCase):
+    """Test case class for testing provider retrieval from data.gov.hk."""
     @patch("requests.get")
     def test_get_providers_success_en(self, mock_get):
         # Mock the JSON response from data.gov.hk for English providers
@@ -40,8 +46,9 @@ class TestDatagovhkProviders(unittest.TestCase):
             "https://data.gov.hk/filestore/json/providers_en.json",
             headers={
                 "Accept": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/* Safari/* Edg/*"
+            },
+            timeout=10
         )
         self.assertIn("providers", result)
         self.assertEqual(len(result["providers"]), 2)
@@ -82,8 +89,9 @@ class TestDatagovhkProviders(unittest.TestCase):
             "https://data.gov.hk/filestore/json/providers_tc.json",
             headers={
                 "Accept": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/* Safari/* Edg/*"
+            },
+            timeout=10
         )
         self.assertIn("providers", result)
         self.assertEqual(len(result["providers"]), 2)
@@ -124,8 +132,9 @@ class TestDatagovhkProviders(unittest.TestCase):
             "https://data.gov.hk/filestore/json/providers_sc.json",
             headers={
                 "Accept": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/* Safari/* Edg/*"
+            },
+            timeout=10
         )
         self.assertIn("providers", result)
         self.assertEqual(len(result["providers"]), 2)
@@ -157,8 +166,9 @@ class TestDatagovhkProviders(unittest.TestCase):
             "https://data.gov.hk/filestore/json/providers_en.json",
             headers={
                 "Accept": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/* Safari/* Edg/*"
+            },
+            timeout=10
         )
         self.assertIn("providers", result)
 
@@ -178,7 +188,7 @@ class TestDatagovhkProviders(unittest.TestCase):
         result = get_providers("en")
 
         self.assertIn("error", result)
-        self.assertIn("An unexpected error occurred", result["error"])
+        self.assertIn("Failed to fetch providers data", result["error"])
 
 if __name__ == "__main__":
     unittest.main()

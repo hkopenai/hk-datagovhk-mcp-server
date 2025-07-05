@@ -1,7 +1,12 @@
-import requests
-from bs4 import BeautifulSoup
-from typing import Dict, Any
+"""
+Crawl datasets from data.gov.hk API.
+
+This module retrieves dataset info from data.gov.hk by category and page.
+"""
+
 import logging
+from typing import Dict, Any
+import requests
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -17,7 +22,7 @@ def crawl_datasets(category: str, page: int = 1) -> Dict[str, Any]:
     Returns:
         Dict containing a list of datasets with their titles and links.
     """
-    logger.debug(f"Starting crawl for category: {category}, page: {page}")
+    logger.debug("Starting crawl for category: %s, page: %d", category, page)
     base_url = "https://data.gov.hk/api/v1/datasets"
     limit = 12
     offset = (page - 1) * limit
@@ -27,8 +32,7 @@ def crawl_datasets(category: str, page: int = 1) -> Dict[str, Any]:
         "category": category,
         "lang": "en"
     }
-    logger.debug(f"Request parameters: {params}")
-    
+    logger.debug("Request parameters: %s", params)
     try:
         headers = {
             "Accept": "application/json, text/javascript, */*; q=0.01",
@@ -38,24 +42,29 @@ def crawl_datasets(category: str, page: int = 1) -> Dict[str, Any]:
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-origin",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
+            ),
             "X-Requested-With": "XMLHttpRequest",
-            "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"",
+            "sec-ch-ua": (
+                "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", "
+                "\"Microsoft Edge\";v=\"138\""
+            ),
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": "\"Windows\""
         }
-        response = requests.get(base_url, params=params, headers=headers)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        logger.debug(f"Successfully fetched data from {base_url} with params {params}")
-        
+        response = requests.get(base_url, params=params, headers=headers, timeout=10)
+        response.raise_for_status()
+        logger.debug("Successfully fetched data from %s with params %s", base_url, params)
         data = response.json()
-        logger.debug(f"Received JSON response with {data} datasets")
+        logger.debug("Received JSON response with %s datasets", len(data.get("data", [])))
 
         return data
 
     except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to fetch data from data.gov.hk: {e}")
-        return {"error": f"Failed to fetch data from data.gov.hk: {e}"}
+        logger.error("Failed to fetch data for category %s on page %d: %s", category, page, e)
+        return {"error": f"Failed to fetch data for category {category} on page {page}: {str(e)}"}
     except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}")
-        return {"error": f"An unexpected error occurred: {e}"}
+        logger.error("An unexpected error occurred while fetching data for category %s on page %d: %s", category, page, e)
+        return {"error": f"An unexpected error occurred: {str(e)}"}

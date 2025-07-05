@@ -3,7 +3,13 @@ from unittest.mock import patch, MagicMock
 import requests
 from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_crawler import crawl_datasets
 
+"""
+Unit tests for the datagovhk_crawler module.
+This module tests the functionality of crawling dataset information from data.gov.hk.
+"""
+
 class TestDatagovhkCrawler(unittest.TestCase):
+    """Test case class for testing dataset crawling from data.gov.hk."""
     @patch("requests.get")
     def test_crawl_datasets(self, mock_get):
         # Mock the JSON response from data.gov.hk API
@@ -96,9 +102,10 @@ class TestDatagovhkCrawler(unittest.TestCase):
         result = crawl_datasets(category, page)
 
         mock_get.assert_called_once_with(
-            "https://data.gov.hk/api/v1/datasets", 
+            "https://data.gov.hk/api/v1/datasets",
             params={'limit': limit, 'offset': offset, 'category': category, 'lang': 'en'},
-            headers=headers
+            headers=headers,
+            timeout=10
         )
 
         self.assertIn("datasets", result)
@@ -116,6 +123,7 @@ class TestDatagovhkCrawler(unittest.TestCase):
 
     @patch("requests.get")
     def test_crawl_datasets_general_exception(self, mock_get):
+        """Test handling of general exceptions during dataset crawling."""
         mock_get.side_effect = Exception("Something unexpected happened")
 
         category = "finance"

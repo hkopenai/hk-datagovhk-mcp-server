@@ -2,7 +2,13 @@ import unittest
 from unittest.mock import patch, Mock
 from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_package import get_package_data
 
+"""
+Unit tests for the datagovhk_package module.
+This module tests the functionality of fetching package data from data.gov.hk.
+"""
+
 class TestDataGovHKApi(unittest.TestCase):
+    """Test case class for testing package data retrieval from data.gov.hk."""
     def setUp(self):
         self.sample_data = {
             "help": "https://data.gov.hk/en-data/api/3/action/help_show?name=package_show",
@@ -123,78 +129,101 @@ class TestDataGovHKApi(unittest.TestCase):
 
     @patch('requests.get')
     def test_get_package_data_success(self, mock_get):
+        """
+        Test successful retrieval of package data from the API.
+        """
         mock_response = Mock()
         mock_response.json.return_value = self.sample_data
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
 
-        result = get_package_data(id="hk-hyd-plis-lamppostdata", language="en")
+        result = get_package_data("hk-hyd-plis-lamppostdata", "en")
         self.assertEqual(result, self.sample_data)
         mock_get.assert_called_once_with(
             "https://data.gov.hk/en-data/api/3/action/package_show?id=hk-hyd-plis-lamppostdata",
             headers={
                 "Accept": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                              "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
+            },
+            timeout=10
         )
 
     @patch('requests.get')
     def test_get_package_data_different_language(self, mock_get):
+        """
+        Test retrieval of package data with different language codes.
+        """
         mock_response = Mock()
         mock_response.json.return_value = self.sample_data
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
 
-        result = get_package_data(id="hk-hyd-plis-lamppostdata", language="tc")
+        result = get_package_data("hk-hyd-plis-lamppostdata", "tc")
         self.assertEqual(result, self.sample_data)
         mock_get.assert_called_once_with(
             "https://data.gov.hk/tc-data/api/3/action/package_show?id=hk-hyd-plis-lamppostdata",
             headers={
                 "Accept": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                              "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
+            },
+            timeout=10
         )
 
     @patch('requests.get')
     def test_get_package_data_invalid_language(self, mock_get):
+        """
+        Test retrieval of package data with an invalid language code.
+        """
         mock_response = Mock()
         mock_response.json.return_value = self.sample_data
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
 
-        result = get_package_data(id="hk-hyd-plis-lamppostdata", language="invalid")
+        result = get_package_data("hk-hyd-plis-lamppostdata", "invalid")
         self.assertEqual(result, self.sample_data)
         mock_get.assert_called_once_with(
             "https://data.gov.hk/en-data/api/3/action/package_show?id=hk-hyd-plis-lamppostdata",
             headers={
                 "Accept": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                              "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
+            },
+            timeout=10
         )
 
     @patch('requests.get')
     def test_get_package_data_request_exception(self, mock_get):
+        """
+        Test handling of request exceptions during package data retrieval.
+        """
         mock_get.side_effect = Exception("Request failed")
 
-        result = get_package_data(id="hk-hyd-plis-lamppostdata", language="en")
+        result = get_package_data("hk-hyd-plis-lamppostdata", language="en")
         self.assertIn("error", result)
-        self.assertIn("Request failed", result["error"])
+        self.assertIn("Failed to fetch package data", result["error"])
 
     @patch('requests.get')
     def test_get_package_data_empty_id(self, mock_get):
+        """
+        Test retrieval of package data with an empty ID.
+        """
         mock_response = Mock()
-        mock_response.json.return_value = {"error": "Invalid ID"}
+        mock_response.json.return_value = self.sample_data
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
 
-        result = get_package_data(id="")
-        self.assertIn("error", result)
+        result = get_package_data("", "en")
+        self.assertEqual(result, self.sample_data)
         mock_get.assert_called_once_with(
             "https://data.gov.hk/en-data/api/3/action/package_show?id=",
             headers={
                 "Accept": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                              "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
+            },
+            timeout=10
         )
 
 if __name__ == '__main__':

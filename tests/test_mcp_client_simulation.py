@@ -8,6 +8,11 @@ import asyncio
 import socket
 import logging
 
+"""
+Unit tests for MCP client simulation.
+This module tests the functionality of the MCP client by simulating interactions with a live server.
+"""
+
 # Configure logging
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(level=getattr(logging, log_level),
@@ -21,6 +26,7 @@ from mcp import ClientSession
 
 @unittest.skipUnless(os.environ.get('RUN_LIVE_TESTS') == 'true', "Set RUN_LIVE_TESTS=true to run live tests")
 class TestMCPClientSimulation(unittest.TestCase):
+    """Test case class for simulating and testing MCP client interactions with a server."""
     server_process = None
     SERVER_URL = "http://127.0.0.1:8000/mcp/"
 
@@ -62,7 +68,6 @@ class TestMCPClientSimulation(unittest.TestCase):
             if self.server_process.poll() is None:
                 logger.debug("Tear down complete.")
                 self.server_process.kill()
-            
             # Print any remaining stderr output from the server process
             if self.server_process.stdout:
                 self.server_process.stdout.close()
@@ -82,7 +87,16 @@ class TestMCPClientSimulation(unittest.TestCase):
                 response = await session.call_tool(tool_name, params)
                 logger.info(f"'{tool_name}' tool response: {str(response)[:500]}...")
 
-                json_text = response.content[0].text if response.content else "{}"
+                json_text = "{}"
+                if response.content:
+                    content = response.content[0]
+                    try:
+                        # Avoid direct attribute access, use a safer method
+                        json_text = getattr(content, 'text', '{}')
+                        if json_text != '{}':
+                            json_text = str(json_text)
+                    except (AttributeError, TypeError):
+                        json_text = "{}"
                 data = json.loads(json_text)
                 self.assertIsInstance(data, dict, f"Result should be a dictionary")
                 self.assertNotIn("error", data, f"Result should not contain an error: {data}")

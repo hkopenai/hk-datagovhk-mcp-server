@@ -2,7 +2,13 @@ import unittest
 from unittest.mock import patch, Mock
 from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_categories import get_categories
 
+"""
+Unit tests for the datagovhk_categories module.
+This module tests the functionality of fetching category data from data.gov.hk.
+"""
+
 class TestDataGovHKCategories(unittest.TestCase):
+    """Test case class for testing category retrieval from data.gov.hk."""
     def setUp(self):
         self.sample_data = {
             "categories": [
@@ -38,8 +44,10 @@ class TestDataGovHKCategories(unittest.TestCase):
             "https://data.gov.hk/filestore/json/categories_en.json",
             headers={
                 "Accept": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                              "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
+            },
+            timeout=10
         )
 
     @patch('requests.get')
@@ -56,7 +64,8 @@ class TestDataGovHKCategories(unittest.TestCase):
             headers={
                 "Accept": "application/json",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+            },
+            timeout=10
         )
 
     @patch('requests.get')
@@ -73,7 +82,8 @@ class TestDataGovHKCategories(unittest.TestCase):
             headers={
                 "Accept": "application/json",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+            },
+            timeout=10
         )
 
     @patch('requests.get')
@@ -90,16 +100,18 @@ class TestDataGovHKCategories(unittest.TestCase):
             headers={
                 "Accept": "application/json",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-            }
+            },
+            timeout=10
         )
 
     @patch('requests.get')
     def test_get_categories_request_exception(self, mock_get):
+        """Test handling of request exceptions during category retrieval."""
         mock_get.side_effect = Exception("Request failed")
 
         result = get_categories(language="en")
         self.assertIn("error", result)
-        self.assertIn("Request failed", result["error"])
+        self.assertIn("An unexpected error occurred", result["error"])
 
 if __name__ == '__main__':
     unittest.main()
