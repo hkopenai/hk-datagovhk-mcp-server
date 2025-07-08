@@ -90,13 +90,15 @@ def main(args):
                        help='Run in SSE mode instead of stdio')
     parser.add_argument('-p', '--port', type=int, default=8000,
                        help='Port to run the server on (default: 8000)')
+    parser.add_argument('--host', type=str, default="127.0.0.1", 
+                       help='Host to bind the server to')
     args = parser.parse_args()
 
     print(f"[DEBUG] Parsed arguments: {args}")
     server = create_mcp_server()
     if args.sse:
-        server.run(transport="streamable-http", port=args.port)
-        print(f"HK Data.gov.hk MCP Server running in SSE mode on port {args.port}")
+        server.run(transport="streamable-http", host=args.host, port=args.port)
+        print(f"HK Data.gov.hk MCP Server running in SSE mode on port {args.port}, bound to {args.host}")
     else:
         server.run()
         print("HK Data.gov.hk MCP Server running in stdio mode")
