@@ -32,7 +32,7 @@ def register(mcp):
             A dictionary containing the list of categories.
         """
         return _get_categories(language)
-    
+
 def _get_categories(language: str = "en") -> Dict[str, Any]:
     """
     Fetch categories from data.gov.hk based on the specified language.
@@ -69,4 +69,3 @@ def _get_categories(language: str = "en") -> Dict[str, Any]:
     except Exception as e:
         logger.error("An unexpected error occurred while fetching categories: %s", e)
         return {"error": f"An unexpected error occurred: {str(e)}"}
-

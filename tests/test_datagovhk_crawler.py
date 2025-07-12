@@ -1,9 +1,6 @@
 """
 Module for testing the datagovhk_crawler tool.
-
-This module contains unit tests for fetching and processing data.gov.hk datasets.
 """
-
 import unittest
 from unittest.mock import patch, MagicMock
 import requests
@@ -79,6 +76,10 @@ class TestDatagovhkCrawler(unittest.TestCase):
     def test_register_tool(self):
         """
         Test the registration of the crawl_datasets tool.
+
+        This test verifies that the register function correctly registers the tool
+        with the FastMCP server and that the registered tool calls the underlying
+        _crawl_datasets function.
         """
         mock_mcp = MagicMock()
 

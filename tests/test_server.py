@@ -8,7 +8,6 @@ import unittest
 from unittest.mock import patch, Mock
 from hkopenai.hk_datagovhk_mcp_server.server import create_mcp_server
 
-
 class TestApp(unittest.TestCase):
     """
     Test class for verifying MCP server creation and tool functionality.
@@ -46,7 +45,3 @@ class TestApp(unittest.TestCase):
         mock_providers_register.assert_called_once_with(mock_server)
         mock_categories_register.assert_called_once_with(mock_server)
         mock_package_register.assert_called_once_with(mock_server)
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -1,9 +1,6 @@
 """
 Module for testing the datagovhk_package tool.
-
-This module contains unit tests for fetching and processing data.gov.hk package data.
 """
-
 import unittest
 from unittest.mock import patch, MagicMock
 import requests
@@ -73,6 +70,10 @@ class TestDatagovhkPackage(unittest.TestCase):
     def test_register_tool(self):
         """
         Test the registration of the get_package_data tool.
+
+        This test verifies that the register function correctly registers the tool
+        with the FastMCP server and that the registered tool calls the underlying
+        _get_package_data function.
         """
         mock_mcp = MagicMock()
 
