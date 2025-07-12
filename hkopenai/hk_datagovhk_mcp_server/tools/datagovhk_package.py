@@ -7,12 +7,38 @@ This module retrieves detailed package info from data.gov.hk using package IDs.
 import logging
 from typing import Dict, Any
 import requests
+from pydantic import Field
+from typing_extensions import Annotated
 
 # Configure logging
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def get_package_data(package_id: str, language: str = "en") -> Dict[str, Any]:
+
+def register(mcp):
+    """Registers the datagovhk_package tool with the FastMCP server."""
+    @mcp.tool(
+        description=(
+            "Fetch package data from data.gov.hk API using the provided ID and language, "
+            "typically obtained from the crawler tool."
+        ),
+    )
+    def get_package_data(
+        package_id: Annotated[str, Field(description="The unique identifier of the package to retrieve.")],
+        language: Annotated[str, Field(description="The language code (en, tc, sc) for the data (default is 'en').")] = "en"
+    ) -> Dict:
+        """Fetch detailed package data from data.gov.hk using the package ID.
+        
+        Args:
+            package_id: The unique identifier of the package to retrieve.
+            language: The language code (en, tc, sc) for the data (default is 'en').
+            
+        Returns:
+            A dictionary containing the detailed package information.
+        """
+        return _get_package_data(package_id, language)
+
+def _get_package_data(package_id: str, language: str = "en") -> Dict[str, Any]:
     """
     Fetch package data from data.gov.hk API using the provided ID and language.
 

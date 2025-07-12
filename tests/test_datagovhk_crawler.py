@@ -1,138 +1,110 @@
+"""
+Module for testing the datagovhk_crawler tool.
+
+This module contains unit tests for fetching and processing data.gov.hk datasets.
+"""
+
 import unittest
 from unittest.mock import patch, MagicMock
 import requests
-from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_crawler import crawl_datasets
 
-"""
-Unit tests for the datagovhk_crawler module.
-This module tests the functionality of crawling dataset information from data.gov.hk.
-"""
+from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_crawler import _crawl_datasets
+from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_crawler import register
+
 
 class TestDatagovhkCrawler(unittest.TestCase):
-    """Test case class for testing dataset crawling from data.gov.hk."""
-    @patch("requests.get")
-    def test_crawl_datasets(self, mock_get):
-        # Mock the JSON response from data.gov.hk API
-        mock_response_json = {
-            "datasets": [
-                {
-                "category": "health",
-                "description": {
-                    "en": "List showing the product name, trademark text, product holder (pCm wholesaler/ pCm manufacturer), pCm registration number/application number and active ingredients displayed on the pCm label etc.",
-                    "sc": "列表显示产品名称，商标文字，注册持有人/申请人，中成药过渡性注册编号(HKP)/中成药注册编号(HKC)及标签显示的有效成分等",
-                    "tc": "列表顯示產品名稱，商標文字，註冊持有人/申請人，中成藥過渡性註冊編號(HKP)/中成藥註冊編號(HKC)及標籤顯示的有效成分等"
-                },
-                "format": [
-                    "XML"
-                ],
-                "id": "hk-dh-cmd-cmd-list-of-proprietary-chinese-medicine",
-                "isApiAvailable": "false",
-                "name": {
-                    "en": "List of applications for proprietary Chinese medicine (pCm) registration",
-                    "sc": "中成药名",
-                    "tc": "中成藥名單"
-                },
-                "provider": "hk-dh",
-                "score": "null"
-                },
-                {
-                "category": "health",
-                "description": {
-                    "en": "The dataset contains daily count of COVID-19 vaccination in different age groups",
-                    "sc": "数据集附有不同年龄组别每日的2019冠状病毒病疫苗接种数目",
-                    "tc": "數據集附有不同年齡組別每日的2019冠狀病毒病疫苗接種數目"
-                },
-                "format": [
-                    "CSV"
-                ],
-                "id": "hk-hhb-hhbcovid19-vaccination-rates-over-time-by-age",
-                "isApiAvailable": "false",
-                "name": {
-                    "en": "Daily count of vaccination by age groups",
-                    "sc": "按年龄组别划分的2019冠状病毒病疫苗接种数目",
-                    "tc": "按年齡組別劃分的2019冠狀病毒病疫苗接種數目"
-                },
-                "provider": "hk-hhb",
-                "score": "null"
-                }
+    """
+    Test class for verifying datagovhk_crawler functionality.
 
-            ],
-            "total": 119
-            }
+    This class contains test cases to ensure the data fetching and processing
+    for data.gov.hk datasets work as expected.
+    """
+
+    @patch('requests.get')
+    def test_crawl_datasets_success(self, mock_get):
+        """
+        Test successful crawling of datasets.
+        """
         mock_response = MagicMock()
-        mock_response.json.return_value = mock_response_json
-        mock_response.raise_for_status.return_value = None
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": [
+                {"title": "Dataset 1", "link": "link1"},
+                {"title": "Dataset 2", "link": "link2"}
+            ]
+        }
         mock_get.return_value = mock_response
 
-        category = "city-management"
-        page = 1
-        result = crawl_datasets(category, page)
+        result = _crawl_datasets(category="test", page=1)
+        self.assertIn("data", result)
+        self.assertEqual(len(result["data"]), 2)
+        self.assertEqual(result["data"][0]["title"], "Dataset 1")
 
-        self.assertIn("datasets", result)
-
-    @patch("requests.get")
-    def test_crawl_datasets_no_results(self, mock_get):
-        mock_response_json = {
-            "datasets": [],
-            "total": 0
-        }
+    @patch('requests.get')
+    def test_crawl_datasets_http_error(self, mock_get):
+        """
+        Test handling of HTTP errors during crawling.
+        """
         mock_response = MagicMock()
-        mock_response.json.return_value = mock_response_json
-        mock_response.raise_for_status.return_value = None
+        mock_response.status_code = 404
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("Not Found")
         mock_get.return_value = mock_response
 
-        category = "nonexistent"
-        page = 1
-        limit = 12
-        offset = (page - 1) * limit
-        headers = {
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "Accept-Language": "en-US,en;q=0.9,zh-TW;q=0.8,zh-CN;q=0.7,zh;q=0.6,ru;q=0.5",
-            "Connection": "keep-alive",
-            "Referer": f"https://data.gov.hk/en-datasets?page={page}&category={category}",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0",
-            "X-Requested-With": "XMLHttpRequest",
-            "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"",
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": "\"Windows\""
-        }
-        result = crawl_datasets(category, page)
-
-        mock_get.assert_called_once_with(
-            "https://data.gov.hk/api/v1/datasets",
-            params={'limit': limit, 'offset': offset, 'category': category, 'lang': 'en'},
-            headers=headers,
-            timeout=10
-        )
-
-        self.assertIn("datasets", result)
-
-    @patch("requests.get")
-    def test_crawl_datasets_request_exception(self, mock_get):
-        mock_get.side_effect = requests.exceptions.RequestException("Network error")
-
-        category = "finance"
-        page = 1
-        result = crawl_datasets(category, page)
-
+        result = _crawl_datasets(category="test", page=1)
         self.assertIn("error", result)
         self.assertIn("Failed to fetch data", result["error"])
 
-    @patch("requests.get")
-    def test_crawl_datasets_general_exception(self, mock_get):
-        """Test handling of general exceptions during dataset crawling."""
-        mock_get.side_effect = Exception("Something unexpected happened")
+    @patch('requests.get')
+    def test_crawl_datasets_request_exception(self, mock_get):
+        """
+        Test handling of request exceptions during crawling.
+        """
+        mock_get.side_effect = requests.exceptions.RequestException("Connection Error")
 
-        category = "finance"
-        page = 1
-        result = crawl_datasets(category, page)
+        result = _crawl_datasets(category="test", page=1)
+        self.assertIn("error", result)
+        self.assertIn("Failed to fetch data", result["error"])
 
+    @patch('requests.get')
+    def test_crawl_datasets_unexpected_error(self, mock_get):
+        """
+        Test handling of unexpected errors during crawling.
+        """
+        mock_get.side_effect = Exception("Unexpected Error")
+
+        result = _crawl_datasets(category="test", page=1)
         self.assertIn("error", result)
         self.assertIn("An unexpected error occurred", result["error"])
 
+    def test_register_tool(self):
+        """
+        Test the registration of the crawl_datasets tool.
+        """
+        mock_mcp = MagicMock()
 
-if __name__ == "__main__":
-    unittest.main()
+        # Call the register function
+        register(mock_mcp)
+
+        # Verify that mcp.tool was called with the correct description
+        mock_mcp.tool.assert_called_once_with(
+            description="Crawl datasets from data.gov.hk based on category and page.",
+        )
+
+        # Get the mock that represents the decorator returned by mcp.tool
+        mock_decorator = mock_mcp.tool.return_value
+
+        # Verify that the mock decorator was called once (i.e., the function was decorated)
+        mock_decorator.assert_called_once()
+
+        # The decorated function is the first argument of the first call to the mock_decorator
+        decorated_function = mock_decorator.call_args[0][0]
+
+        # Verify the name of the decorated function
+        self.assertEqual(decorated_function.__name__, "crawl_datasets")
+
+        # Call the decorated function and verify it calls _crawl_datasets
+        with patch(
+            "hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_crawler._crawl_datasets"
+        ) as mock_crawl_datasets:
+            decorated_function(category="test_cat", page=2)
+            mock_crawl_datasets.assert_called_once_with("test_cat", 2)

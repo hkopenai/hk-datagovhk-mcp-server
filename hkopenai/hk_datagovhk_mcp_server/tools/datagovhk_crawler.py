@@ -7,11 +7,34 @@ This module retrieves dataset info from data.gov.hk by category and page.
 import logging
 from typing import Dict, Any
 import requests
+from pydantic import Field
+from typing_extensions import Annotated
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-def crawl_datasets(category: str, page: int = 1) -> Dict[str, Any]:
+
+def register(mcp):
+    """Registers the datagovhk_crawler tool with the FastMCP server."""
+    @mcp.tool(
+        description="Crawl datasets from data.gov.hk based on category and page.",
+    )
+    def crawl_datasets(
+        category: Annotated[str, Field(description="The category to filter datasets.")],
+        page: Annotated[int, Field(description="The page number to retrieve (default is 1).")] = 1
+    ) -> Dict:
+        """Crawl datasets from data.gov.hk for a given category and page number.
+        
+        Args:
+            category: The category to filter datasets.
+            page: The page number to retrieve (default is 1).
+            
+        Returns:
+            A dictionary containing the crawled dataset information.
+        """
+        return _crawl_datasets(category, page)
+
+def _crawl_datasets(category: str, page: int = 1) -> Dict[str, Any]:
     """
     Crawl datasets from data.gov.hk based on category and page number using API.
 
@@ -48,8 +71,8 @@ def crawl_datasets(category: str, page: int = 1) -> Dict[str, Any]:
             ),
             "X-Requested-With": "XMLHttpRequest",
             "sec-ch-ua": (
-                "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", "
-                "\"Microsoft Edge\";v=\"138\""
+                "\"Not)A;Brand\"\;v=\"8\", \"Chromium\"\;v=\"138\", "
+                "\"Microsoft Edge\"\;v=\"138\""
             ),
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": "\"Windows\""
