@@ -22,16 +22,16 @@ def create_mcp_server():
 
     return mcp
 
-def main(args):
+def main(host: str, port: int, sse: bool):
     """Main function to start the HK Data.gov.hk MCP Server with command-line arguments.
     
     Args:
         args: Parsed command-line arguments.
     """
     server = create_mcp_server()
-    if args.sse:
-        server.run(transport="streamable-http", host=args.host, port=args.port)
-        print(f"HK Data.gov.hk MCP Server running in SSE mode on port {args.port}, bound to {args.host}")
+    if sse:
+        server.run(transport="streamable-http", host=host, port=port)
+        print(f"HK Data.gov.hk MCP Server running in SSE mode on port {port}, bound to {host}")
     else:
         server.run()
         print("HK Data.gov.hk MCP Server running in stdio mode")
