@@ -6,7 +6,7 @@ This module contains unit tests for the server creation process and tool registr
 
 import unittest
 from unittest.mock import patch, Mock
-from hkopenai.hk_datagovhk_mcp_server.server import server
+from hkopenai.hk_datagovhk_mcp_server import server
 
 class TestApp(unittest.TestCase):
     """
