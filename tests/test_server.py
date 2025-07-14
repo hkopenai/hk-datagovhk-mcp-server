@@ -37,7 +37,7 @@ class TestApp(unittest.TestCase):
         mock_fastmcp.return_value = mock_server
 
         # Test server creation
-        create_mcp_server()
+        server()
 
         # Verify server creation
         mock_fastmcp.assert_called_once()
