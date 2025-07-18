@@ -6,18 +6,19 @@ with the data.gov.hk API for crawling datasets, fetching providers, categories, 
 """
 
 from fastmcp import FastMCP
-from .tools import datagovhk_crawler
-from .tools import datagovhk_providers
-from .tools import datagovhk_categories
-from .tools import datagovhk_package
+from .tools import crawler
+from .tools import providers
+from .tools import categories
+from .tools import package
+
 
 def server():
     """Create and configure the HK Data.gov.hk MCP server."""
     mcp = FastMCP(name="HKDataGovHKServer")
 
-    datagovhk_crawler.register(mcp)
-    datagovhk_providers.register(mcp)
-    datagovhk_categories.register(mcp)
-    datagovhk_package.register(mcp)
+    crawler.register(mcp)
+    providers.register(mcp)
+    categories.register(mcp)
+    package.register(mcp)
 
     return mcp

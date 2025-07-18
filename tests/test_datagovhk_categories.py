@@ -1,12 +1,12 @@
 """
 Module for testing the datagovhk_categories tool.
 """
+
 import unittest
 from unittest.mock import patch, MagicMock
-import requests
-
-from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_categories import _get_categories
-from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_categories import register
+from hkopenai.hk_datagovhk_mcp_server.tools.categories import _get_categories
+from hkopenai.hk_datagovhk_mcp_server.tools.categories import register
+from hkopenai_common.json_utils import fetch_json_data
 
 
 class TestDatagovhkCategories(unittest.TestCase):
@@ -17,52 +17,46 @@ class TestDatagovhkCategories(unittest.TestCase):
     for data.gov.hk categories work as expected.
     """
 
-    @patch('requests.get')
-    def test_get_categories_success(self, mock_get):
+    @patch("hkopenai_common.json_utils.fetch_json_data")
+    def test_get_categories_success(self, mock_fetch_json_data):
         """
         Test successful fetching of categories.
         """
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"categories": ["Category1", "Category2"]}
-        mock_get.return_value = mock_response
+        mock_fetch_json_data.return_value = {"categories": ["Category1", "Category2"]}
 
         result = _get_categories(language="en")
         self.assertIn("categories", result)
         self.assertEqual(len(result["categories"]), 2)
         self.assertEqual(result["categories"][0], "Category1")
 
-    @patch('requests.get')
-    def test_get_categories_http_error(self, mock_get):
+    @patch("hkopenai_common.json_utils.fetch_json_data")
+    def test_get_categories_http_error(self, mock_fetch_json_data):
         """
         Test handling of HTTP errors during category fetching.
         """
-        mock_response = MagicMock()
-        mock_response.status_code = 404
-        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("Not Found")
-        mock_get.return_value = mock_response
+        mock_fetch_json_data.side_effect = {"error": "HTTP error occurred"}
 
         result = _get_categories(language="en")
         self.assertIn("error", result)
-        self.assertIn("Failed to fetch categories data", result["error"])
+        self.assertIn("HTTP error occurred", result["error"])
 
-    @patch('requests.get')
-    def test_get_categories_request_exception(self, mock_get):
+    @patch("hkopenai_common.json_utils.fetch_json_data")
+    def test_get_categories_request_exception(self, mock_fetch_json_data):
         """
         Test handling of request exceptions during category fetching.
         """
-        mock_get.side_effect = requests.exceptions.RequestException("Connection Error")
+        mock_fetch_json_data.side_effect = {"error": "Connection error occurred"}
 
         result = _get_categories(language="en")
         self.assertIn("error", result)
-        self.assertIn("Failed to fetch categories data", result["error"])
+        self.assertIn("Connection error occurred", result["error"])
 
-    @patch('requests.get')
-    def test_get_categories_unexpected_error(self, mock_get):
+    @patch("hkopenai_common.json_utils.fetch_json_data")
+    def test_get_categories_unexpected_error(self, mock_fetch_json_data):
         """
         Test handling of unexpected errors during category fetching.
         """
-        mock_get.side_effect = Exception("Unexpected Error")
+        mock_fetch_json_data.side_effect = {"error": "An unexpected error occurred"}
 
         result = _get_categories(language="en")
         self.assertIn("error", result)
@@ -100,7 +94,7 @@ class TestDatagovhkCategories(unittest.TestCase):
 
         # Call the decorated function and verify it calls _get_categories
         with patch(
-            "hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_categories._get_categories"
+            "hkopenai.hk_datagovhk_mcp_server.tools.categories._get_categories"
         ) as mock_get_categories:
             decorated_function(language="en")
             mock_get_categories.assert_called_once_with("en")

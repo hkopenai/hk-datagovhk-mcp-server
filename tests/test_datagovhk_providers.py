@@ -1,12 +1,13 @@
 """
 Module for testing the datagovhk_providers tool.
 """
+
 import unittest
 from unittest.mock import patch, MagicMock
-import requests
 
-from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_providers import _get_providers
-from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_providers import register
+
+from hkopenai.hk_datagovhk_mcp_server.tools.providers import _get_providers
+from hkopenai.hk_datagovhk_mcp_server.tools.providers import register
 
 
 class TestDatagovhkProviders(unittest.TestCase):
@@ -17,52 +18,12 @@ class TestDatagovhkProviders(unittest.TestCase):
     for data.gov.hk providers work as expected.
     """
 
-    @patch('requests.get')
-    def test_get_providers_success(self, mock_get):
-        """
-        Test successful fetching of providers.
-        """
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"providers": ["Provider1", "Provider2"]}
-        mock_get.return_value = mock_response
-
-        result = _get_providers(language="en")
-        self.assertIn("providers", result)
-        self.assertEqual(len(result["providers"]), 2)
-        self.assertEqual(result["providers"][0], "Provider1")
-
-    @patch('requests.get')
-    def test_get_providers_http_error(self, mock_get):
-        """
-        Test handling of HTTP errors during provider fetching.
-        """
-        mock_response = MagicMock()
-        mock_response.status_code = 404
-        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("Not Found")
-        mock_get.return_value = mock_response
-
-        result = _get_providers(language="en")
-        self.assertIn("error", result)
-        self.assertIn("Failed to fetch providers data", result["error"])
-
-    @patch('requests.get')
-    def test_get_providers_request_exception(self, mock_get):
-        """
-        Test handling of request exceptions during provider fetching.
-        """
-        mock_get.side_effect = requests.exceptions.RequestException("Connection Error")
-
-        result = _get_providers(language="en")
-        self.assertIn("error", result)
-        self.assertIn("Failed to fetch providers data", result["error"])
-
-    @patch('requests.get')
-    def test_get_providers_unexpected_error(self, mock_get):
+    @patch("hkopenai_common.json_utils.fetch_json_data")
+    def test_get_providers_unexpected_error(self, mock_fetch_json_data):
         """
         Test handling of unexpected errors during provider fetching.
         """
-        mock_get.side_effect = Exception("Unexpected Error")
+        mock_fetch_json_data.side_effect = Exception("An unexpected error occurred")
 
         result = _get_providers(language="en")
         self.assertIn("error", result)

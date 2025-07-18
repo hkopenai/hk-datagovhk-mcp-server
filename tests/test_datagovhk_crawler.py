@@ -1,12 +1,15 @@
 """
 Module for testing the datagovhk_crawler tool.
 """
+
 import unittest
 from unittest.mock import patch, MagicMock
-import requests
-
-from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_crawler import _crawl_datasets
-from hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_crawler import register
+from hkopenai.hk_datagovhk_mcp_server.tools.crawler import _crawl_datasets
+from hkopenai.hk_datagovhk_mcp_server.tools.crawler import register
+from hkopenai_common.json_utils import fetch_json_data
+from hkopenai_common.json_utils import fetch_json_data
+from hkopenai_common.json_utils import fetch_json_data
+from hkopenai_common.json_utils import fetch_json_data
 
 
 class TestDatagovhkCrawler(unittest.TestCase):
@@ -17,7 +20,7 @@ class TestDatagovhkCrawler(unittest.TestCase):
     for data.gov.hk datasets work as expected.
     """
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_crawl_datasets_success(self, mock_get):
         """
         Test successful crawling of datasets.
@@ -27,7 +30,7 @@ class TestDatagovhkCrawler(unittest.TestCase):
         mock_response.json.return_value = {
             "data": [
                 {"title": "Dataset 1", "link": "link1"},
-                {"title": "Dataset 2", "link": "link2"}
+                {"title": "Dataset 2", "link": "link2"},
             ]
         }
         mock_get.return_value = mock_response
@@ -37,21 +40,23 @@ class TestDatagovhkCrawler(unittest.TestCase):
         self.assertEqual(len(result["data"]), 2)
         self.assertEqual(result["data"][0]["title"], "Dataset 1")
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_crawl_datasets_http_error(self, mock_get):
         """
         Test handling of HTTP errors during crawling.
         """
         mock_response = MagicMock()
         mock_response.status_code = 404
-        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("Not Found")
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            "Not Found"
+        )
         mock_get.return_value = mock_response
 
         result = _crawl_datasets(category="test", page=1)
         self.assertIn("error", result)
         self.assertIn("Failed to fetch data", result["error"])
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_crawl_datasets_request_exception(self, mock_get):
         """
         Test handling of request exceptions during crawling.
@@ -62,12 +67,12 @@ class TestDatagovhkCrawler(unittest.TestCase):
         self.assertIn("error", result)
         self.assertIn("Failed to fetch data", result["error"])
 
-    @patch('requests.get')
-    def test_crawl_datasets_unexpected_error(self, mock_get):
+    @patch("hkopenai_common.json_utils.fetch_json_data")
+    def test_crawl_datasets_unexpected_error(self, mock_fetch_json_data):
         """
         Test handling of unexpected errors during crawling.
         """
-        mock_get.side_effect = Exception("Unexpected Error")
+        mock_fetch_json_data.side_effect = Exception("An unexpected error occurred")
 
         result = _crawl_datasets(category="test", page=1)
         self.assertIn("error", result)
@@ -105,7 +110,7 @@ class TestDatagovhkCrawler(unittest.TestCase):
 
         # Call the decorated function and verify it calls _crawl_datasets
         with patch(
-            "hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_crawler._crawl_datasets"
+            "hkopenai.hk_datagovhk_mcp_server.tools.crawler._crawl_datasets"
         ) as mock_crawl_datasets:
             decorated_function(category="test_cat", page=2)
             mock_crawl_datasets.assert_called_once_with("test_cat", 2)

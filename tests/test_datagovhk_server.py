@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch, Mock
 from hkopenai.hk_datagovhk_mcp_server import server
 
+
 class TestApp(unittest.TestCase):
     """
     Test class for verifying MCP server creation and tool functionality.
@@ -17,11 +18,18 @@ class TestApp(unittest.TestCase):
     """
 
     @patch("hkopenai.hk_datagovhk_mcp_server.server.FastMCP")
-    @patch("hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_crawler.register")
-    @patch("hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_providers.register")
-    @patch("hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_categories.register")
-    @patch("hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_package.register")
-    def test_create_mcp_server(self, mock_package_register, mock_categories_register, mock_providers_register, mock_crawler_register, mock_fastmcp):
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.crawler.register")
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.providers.register")
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.categories.register")
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.package.register")
+    def test_create_mcp_server(
+        self,
+        mock_package_register,
+        mock_categories_register,
+        mock_providers_register,
+        mock_crawler_register,
+        mock_fastmcp,
+    ):
         """
         Test the creation of the MCP server and tool registration.
 
