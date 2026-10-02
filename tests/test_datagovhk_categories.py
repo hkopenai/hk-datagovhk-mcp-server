@@ -4,9 +4,9 @@ Module for testing the datagovhk_categories tool.
 
 import unittest
 from unittest.mock import patch, MagicMock
+
 from hkopenai.hk_datagovhk_mcp_server.tools.categories import _get_categories
 from hkopenai.hk_datagovhk_mcp_server.tools.categories import register
-from hkopenai_common.json_utils import fetch_json_data
 
 
 class TestDatagovhkCategories(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestDatagovhkCategories(unittest.TestCase):
     for data.gov.hk categories work as expected.
     """
 
-    @patch("hkopenai_common.json_utils.fetch_json_data")
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.categories.fetch_json_data")
     def test_get_categories_success(self, mock_fetch_json_data):
         """
         Test successful fetching of categories.
@@ -29,34 +29,44 @@ class TestDatagovhkCategories(unittest.TestCase):
         self.assertEqual(len(result["categories"]), 2)
         self.assertEqual(result["categories"][0], "Category1")
 
-    @patch("hkopenai_common.json_utils.fetch_json_data")
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.categories.fetch_json_data")
     def test_get_categories_http_error(self, mock_fetch_json_data):
         """
         Test handling of HTTP errors during category fetching.
+
+        fetch_json_data returns an {"error": ...} dict on HTTP failures
+        (it does not raise). The tool surfaces this dict verbatim, so
+        the test asserts the error string is propagated.
         """
-        mock_fetch_json_data.side_effect = {"error": "HTTP error occurred"}
+        mock_fetch_json_data.return_value = {"error": "HTTP error occurred"}
 
         result = _get_categories(language="en")
         self.assertIn("error", result)
         self.assertIn("HTTP error occurred", result["error"])
 
-    @patch("hkopenai_common.json_utils.fetch_json_data")
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.categories.fetch_json_data")
     def test_get_categories_request_exception(self, mock_fetch_json_data):
         """
         Test handling of request exceptions during category fetching.
+
+        fetch_json_data converts connection errors to {"error": ...}
+        dicts before returning.
         """
-        mock_fetch_json_data.side_effect = {"error": "Connection error occurred"}
+        mock_fetch_json_data.return_value = {"error": "Connection error occurred"}
 
         result = _get_categories(language="en")
         self.assertIn("error", result)
         self.assertIn("Connection error occurred", result["error"])
 
-    @patch("hkopenai_common.json_utils.fetch_json_data")
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.categories.fetch_json_data")
     def test_get_categories_unexpected_error(self, mock_fetch_json_data):
         """
         Test handling of unexpected errors during category fetching.
+
+        fetch_json_data returns {"error": ...} for any unhandled
+        exception in its try/except chain.
         """
-        mock_fetch_json_data.side_effect = {"error": "An unexpected error occurred"}
+        mock_fetch_json_data.return_value = {"error": "An unexpected error occurred"}
 
         result = _get_categories(language="en")
         self.assertIn("error", result)

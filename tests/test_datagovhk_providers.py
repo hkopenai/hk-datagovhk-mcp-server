@@ -5,7 +5,6 @@ Module for testing the datagovhk_providers tool.
 import unittest
 from unittest.mock import patch, MagicMock
 
-
 from hkopenai.hk_datagovhk_mcp_server.tools.providers import _get_providers
 from hkopenai.hk_datagovhk_mcp_server.tools.providers import register
 
@@ -18,12 +17,31 @@ class TestDatagovhkProviders(unittest.TestCase):
     for data.gov.hk providers work as expected.
     """
 
-    @patch("hkopenai_common.json_utils.fetch_json_data")
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.providers.fetch_json_data")
+    def test_get_providers_success(self, mock_fetch_json_data):
+        """Happy path: tool returns the dict produced by fetch_json_data."""
+        mock_fetch_json_data.return_value = {
+            "providers": [
+                {"id": "hk-afcd", "name": {"en": "AFCD"}},
+                {"id": "hk-archsd", "name": {"en": "ArchSD"}},
+            ]
+        }
+
+        result = _get_providers(language="en")
+        self.assertIn("providers", result)
+        self.assertEqual(len(result["providers"]), 2)
+        self.assertEqual(result["providers"][0]["id"], "hk-afcd")
+        mock_fetch_json_data.assert_called_once()
+
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.providers.fetch_json_data")
     def test_get_providers_unexpected_error(self, mock_fetch_json_data):
         """
         Test handling of unexpected errors during provider fetching.
+
+        fetch_json_data converts unhandled exceptions into {"error": ...}
+        dicts before returning. The tool surfaces the dict verbatim.
         """
-        mock_fetch_json_data.side_effect = Exception("An unexpected error occurred")
+        mock_fetch_json_data.return_value = {"error": "An unexpected error occurred"}
 
         result = _get_providers(language="en")
         self.assertIn("error", result)
@@ -59,9 +77,10 @@ class TestDatagovhkProviders(unittest.TestCase):
         # Verify the name of the decorated function
         self.assertEqual(decorated_function.__name__, "get_providers")
 
-        # Call the decorated function and verify it calls _get_providers
+        # Call the decorated function and verify it calls _get_providers.
+        # Patch path matches the actual module name (providers, not datagovhk_providers).
         with patch(
-            "hkopenai.hk_datagovhk_mcp_server.tools.datagovhk_providers._get_providers"
+            "hkopenai.hk_datagovhk_mcp_server.tools.providers._get_providers"
         ) as mock_get_providers:
             decorated_function(language="en")
             mock_get_providers.assert_called_once_with("en")

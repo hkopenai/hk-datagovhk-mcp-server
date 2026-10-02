@@ -4,12 +4,9 @@ Module for testing the datagovhk_crawler tool.
 
 import unittest
 from unittest.mock import patch, MagicMock
+
 from hkopenai.hk_datagovhk_mcp_server.tools.crawler import _crawl_datasets
 from hkopenai.hk_datagovhk_mcp_server.tools.crawler import register
-from hkopenai_common.json_utils import fetch_json_data
-from hkopenai_common.json_utils import fetch_json_data
-from hkopenai_common.json_utils import fetch_json_data
-from hkopenai_common.json_utils import fetch_json_data
 
 
 class TestDatagovhkCrawler(unittest.TestCase):
@@ -20,59 +17,60 @@ class TestDatagovhkCrawler(unittest.TestCase):
     for data.gov.hk datasets work as expected.
     """
 
-    @patch("requests.get")
-    def test_crawl_datasets_success(self, mock_get):
-        """
-        Test successful crawling of datasets.
-        """
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.crawler.fetch_json_data")
+    def test_crawl_datasets_success(self, mock_fetch_json_data):
+        """Happy path: tool returns the dict produced by fetch_json_data."""
+        mock_fetch_json_data.return_value = {
             "data": [
                 {"title": "Dataset 1", "link": "link1"},
                 {"title": "Dataset 2", "link": "link2"},
             ]
         }
-        mock_get.return_value = mock_response
 
         result = _crawl_datasets(category="test", page=1)
         self.assertIn("data", result)
         self.assertEqual(len(result["data"]), 2)
         self.assertEqual(result["data"][0]["title"], "Dataset 1")
 
-    @patch("requests.get")
-    def test_crawl_datasets_http_error(self, mock_get):
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.crawler.fetch_json_data")
+    def test_crawl_datasets_http_error(self, mock_fetch_json_data):
         """
         Test handling of HTTP errors during crawling.
+
+        fetch_json_data converts HTTP errors (4xx/5xx) into {"error": ...}
+        dicts before returning. The tool surfaces the dict verbatim.
         """
-        mock_response = MagicMock()
-        mock_response.status_code = 404
-        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
-            "Not Found"
-        )
-        mock_get.return_value = mock_response
+        mock_fetch_json_data.return_value = {"error": "HTTP error occurred: 500"}
 
         result = _crawl_datasets(category="test", page=1)
         self.assertIn("error", result)
-        self.assertIn("Failed to fetch data", result["error"])
+        self.assertIn("HTTP error occurred", result["error"])
 
-    @patch("requests.get")
-    def test_crawl_datasets_request_exception(self, mock_get):
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.crawler.fetch_json_data")
+    def test_crawl_datasets_request_exception(self, mock_fetch_json_data):
         """
         Test handling of request exceptions during crawling.
+
+        fetch_json_data converts connection errors into {"error": ...}
+        dicts before returning.
         """
-        mock_get.side_effect = requests.exceptions.RequestException("Connection Error")
+        mock_fetch_json_data.return_value = {"error": "Connection error occurred"}
 
         result = _crawl_datasets(category="test", page=1)
         self.assertIn("error", result)
-        self.assertIn("Failed to fetch data", result["error"])
+        self.assertIn("Connection error occurred", result["error"])
 
-    @patch("hkopenai_common.json_utils.fetch_json_data")
+    @patch("hkopenai.hk_datagovhk_mcp_server.tools.crawler.fetch_json_data")
     def test_crawl_datasets_unexpected_error(self, mock_fetch_json_data):
         """
         Test handling of unexpected errors during crawling.
+
+        fetch_json_data wraps any unhandled exception into
+        {"error": "An unexpected error occurred during the request: ..."}.
         """
-        mock_fetch_json_data.side_effect = Exception("An unexpected error occurred")
+        mock_fetch_json_data.return_value = {
+            "error": "An unexpected error occurred during the request: Boom"
+        }
 
         result = _crawl_datasets(category="test", page=1)
         self.assertIn("error", result)
