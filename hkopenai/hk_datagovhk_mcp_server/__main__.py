@@ -1,11 +1,15 @@
 """
-Main entry point for the HK Data.gov.hk MCP Server.
-
-This script serves as the command-line interface to start the MCP server with configurable options.
+Console-script entry point for hkopenai.hk_datagovhk_mcp_server.
 """
 
 from hkopenai_common.cli_utils import cli_main
 from .server import server
 
+
+def main():
+    """Console-script entry point for the hk datagovhk mcp server."""
+    cli_main(server, "hk datagovhk mcp server")
+
+
 if __name__ == "__main__":
-    cli_main(server, "HK Datagovhk MCP Server")
+    main()
